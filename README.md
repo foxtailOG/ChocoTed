@@ -1,4 +1,4 @@
-# 🍫 ChocoTed - Chocolate Consumption Analytics Dashboard
+# 🍫 ChocoTed - Chocolate Trend Analytics 
 
 <div align="center">
 
