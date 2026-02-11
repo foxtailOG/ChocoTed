@@ -15,7 +15,7 @@ export function SalesHeatmap() {
         const regions = [...new Set(rawData.map(d => d.region))];
         
         const heatmap = brands.map(brand => {
-          const row = { brand };
+          const row: Record<string, any> = { brand };
           regions.forEach(region => {
             const sales = rawData
               .filter(d => d.brand_preference === brand && d.region === region)
@@ -45,9 +45,9 @@ export function SalesHeatmap() {
   if (loading) return <div className="p-8 text-center">Loading Sales Heatmap...</div>;
 
   const { grid, regions, totalSales, topBrand } = heatmapData;
-  const maxSales = Math.max(...grid.flatMap(row => regions.map(region => row[region] || 0)));
+  const maxSales = Math.max(...grid.flatMap((row: any) => regions.map((region: string) => row[region] || 0)));
 
-  const getHeatColor = (value) => {
+  const getHeatColor = (value: number) => {
     const intensity = (value / maxSales) * 100;
     if (intensity > 75) return 'bg-red-600 text-white';
     if (intensity > 50) return 'bg-orange-500 text-white';
@@ -105,7 +105,7 @@ export function SalesHeatmap() {
             <thead>
               <tr>
                 <th className="text-left p-3 font-semibold">Brand</th>
-                {regions.map(region => (
+                {regions.map((region: string) => (
                   <th key={region} className="text-center p-3 font-semibold">
                     {region}
                   </th>
@@ -114,12 +114,12 @@ export function SalesHeatmap() {
               </tr>
             </thead>
             <tbody>
-              {grid.map((row, i) => {
-                const rowTotal = regions.reduce((sum, region) => sum + (row[region] || 0), 0);
+              {grid.map((row: any, i: number) => {
+                const rowTotal = regions.reduce((sum: number, region: string) => sum + (row[region] || 0), 0);
                 return (
                   <tr key={i} className="border-t">
                     <td className="p-3 font-medium">{row.brand}</td>
-                    {regions.map(region => (
+                    {regions.map((region: string) => (
                       <td key={region} className="p-2">
                         <div className={`p-3 rounded text-center font-medium ${getHeatColor(row[region])}`}>
                           ₹{(row[region] || 0).toLocaleString()}
@@ -164,12 +164,12 @@ export function SalesHeatmap() {
         <div className="bg-card rounded-xl p-6 border">
           <h3 className="text-lg font-semibold mb-4">Top Performers</h3>
           <div className="space-y-3">
-            {grid.sort((a, b) => {
-              const totalA = regions.reduce((sum, region) => sum + (a[region] || 0), 0);
-              const totalB = regions.reduce((sum, region) => sum + (b[region] || 0), 0);
+            {grid.sort((a: any, b: any) => {
+              const totalA = regions.reduce((sum: number, region: string) => sum + (a[region] || 0), 0);
+              const totalB = regions.reduce((sum: number, region: string) => sum + (b[region] || 0), 0);
               return totalB - totalA;
-            }).slice(0, 3).map((row, i) => {
-              const total = regions.reduce((sum, region) => sum + (row[region] || 0), 0);
+            }).slice(0, 3).map((row: any, i: number) => {
+              const total = regions.reduce((sum: number, region: string) => sum + (row[region] || 0), 0);
               return (
                 <div key={i} className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
                   <span className="font-medium">{row.brand}</span>
@@ -183,8 +183,8 @@ export function SalesHeatmap() {
         <div className="bg-card rounded-xl p-6 border">
           <h3 className="text-lg font-semibold mb-4">Regional Leaders</h3>
           <div className="space-y-3">
-            {regions.map(region => {
-              const leader = grid.reduce((best, row) => 
+            {regions.map((region: string) => {
+              const leader = grid.reduce((best: any, row: any) => 
                 (row[region] || 0) > (best[region] || 0) ? row : best
               );
               return (

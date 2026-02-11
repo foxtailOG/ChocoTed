@@ -163,7 +163,7 @@ export function Trends() {
       <div className="bg-card rounded-xl p-6 border">
         <h3 className="text-lg font-semibold mb-4">Purchase Channel Trends</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {channelTrends.map((channel, index) => (
+          {channelTrends.map((channel: any, index: number) => (
             <div key={channel.channel} className="p-4 bg-muted/30 rounded-lg">
               <div className="text-sm text-muted-foreground">{channel.channel}</div>
               <div className="text-xl font-bold">₹{channel.sales.toLocaleString()}</div>
