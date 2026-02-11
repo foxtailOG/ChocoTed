@@ -36,11 +36,9 @@ interface KPICardsProps {
 function KPICard({
   title,
   value,
-  change,
-  trend,
   icon,
   delay = 0,
-}: KPICardProps) {
+}: Omit<KPICardProps, 'change' | 'trend'>) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -54,21 +52,6 @@ function KPICard({
         <div className="flex items-start justify-between mb-4">
           <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 backdrop-blur-sm border border-border/30">
             {icon}
-          </div>
-
-          <div
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${
-              trend === "up"
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                : "bg-red-500/10 text-red-600 dark:text-red-400"
-            }`}
-          >
-            {trend === "up" ? (
-              <TrendingUp className="w-3 h-3" />
-            ) : (
-              <TrendingDown className="w-3 h-3" />
-            )}
-            <span>{change}</span>
           </div>
         </div>
 
@@ -129,29 +112,21 @@ export function KPICards({ data }: KPICardsProps) {
     {
       title: "Total Records",
       value: `${totalConsumption}`,
-      change: "+0%",
-      trend: "up" as const,
       icon: <BarChart3 className="w-5 h-5 text-primary" />,
     },
     {
       title: "Popular Brand",
       value: popularBrand,
-      change: "+0%",
-      trend: "up" as const,
       icon: <Candy className="w-5 h-5 text-primary" />,
     },
     {
       title: "Avg Spend",
       value: `₹${Math.round(avgSpendValue)}`,
-      change: "+0%",
-      trend: "up" as const,
       icon: <TrendingUp className="w-5 h-5 text-primary" />,
     },
     {
       title: "Top Region",
       value: topRegion,
-      change: "+0%",
-      trend: "up" as const,
       icon: <Calendar className="w-5 h-5 text-primary" />,
     },
   ];

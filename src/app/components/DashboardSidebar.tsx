@@ -44,8 +44,8 @@ export function DashboardSidebar({ isCollapsed, currentPage, onNavigate }: Sideb
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <h2 className="text-[var(--sidebar-foreground)] truncate text-lg">ChocAnalytica</h2>
-              <p className="text-xs text-[var(--sidebar-foreground)]/60">Analytics Suite</p>
+              <h2 className="text-[var(--sidebar-foreground)] truncate text-lg">ChocoTed</h2>
+              <p className="text-xs text-[var(--sidebar-foreground)]/60">Chocolate Trend Analytics Dashboard</p>
             </div>
           )}
         </div>
@@ -76,26 +76,6 @@ export function DashboardSidebar({ isCollapsed, currentPage, onNavigate }: Sideb
             );
           })}
         </nav>
-
-        {/* Bottom section */}
-        {!isCollapsed && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="p-4 border-t border-[var(--sidebar-border)]"
-          >
-            <div className="p-4 rounded-xl bg-gradient-to-br from-[var(--sidebar-accent)] to-[var(--sidebar-accent)]/50 border border-[var(--sidebar-border)]">
-              <p className="text-xs text-[var(--sidebar-foreground)] mb-2">Upgrade to Pro</p>
-              <p className="text-xs text-[var(--sidebar-foreground)]/60 mb-3">
-                Unlock advanced AI predictions
-              </p>
-              <button className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] hover:scale-105 transition-transform">
-                Learn More
-              </button>
-            </div>
-          </motion.div>
-        )}
       </div>
     </motion.aside>
   );

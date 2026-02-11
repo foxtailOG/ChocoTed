@@ -5,7 +5,7 @@ import { KPICards } from "./components/KPICards";
 import { ConsumptionChart } from "./components/ConsumptionChart";
 import { FlavorChart } from "./components/FlavorChart";
 import { BrandChart } from "./components/BrandChart";
-import { AIInsights } from "./components/AIInsights";
+
 import { RegionalHeatmap } from "./components/RegionalHeatmap";
 import { ConsumerInsights } from "./components/ConsumerInsights";
 import { BrandAnalysis } from "./components/BrandAnalysis";
@@ -64,15 +64,33 @@ export default function App() {
         return <Trends />;
       case "forecast":
         return <Forecast />;
+      case "reports":
+        return (
+          <div className="flex items-center justify-center h-[60vh]">
+            <div className="text-center">
+              <h1 className="text-3xl font-semibold mb-2">Reports</h1>
+              <p className="text-muted-foreground">Coming soon...</p>
+            </div>
+          </div>
+        );
+      case "settings":
+        return (
+          <div className="flex items-center justify-center h-[60vh]">
+            <div className="text-center">
+              <h1 className="text-3xl font-semibold mb-2">Settings</h1>
+              <p className="text-muted-foreground">Coming soon...</p>
+            </div>
+          </div>
+        );
       default:
         return (
           <>
             <div className="mb-8">
               <h1 className="text-3xl md:text-4xl tracking-tight mb-2">
-                Chocolate Trend Consumption Analyzer
+                ChocoTed
               </h1>
               <p className="text-muted-foreground">
-                Real-time analytics from chocolate consumption data
+                Chocolate Trend Analytics Dashboard
               </p>
             </div>
 
@@ -92,10 +110,9 @@ export default function App() {
               />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <FlavorChart />
               <BrandChart />
-              <AIInsights />
             </div>
 
             <div className="mt-10">
@@ -122,6 +139,7 @@ export default function App() {
           onMenuToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           isDark={isDark}
           onThemeToggle={() => setIsDark(!isDark)}
+          onNavigate={setCurrentPage}
         />
 
         <main className="p-6 max-w-[1800px] mx-auto">

@@ -1,14 +1,52 @@
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
 import { motion } from "motion/react";
-import { MapPin, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { ChocolateDataService } from "../../data/chocolateData";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "leaflet.heat";
+
+// Region coordinates for India map
+const regionCoordinates: Record<string, [number, number]> = {
+  North: [28.7041, 77.1025],
+  South: [13.0827, 80.2707],
+  East: [22.5726, 88.3639],
+  West: [19.0760, 72.8777],
+};
+
+function HeatmapLayer({ points }: { points: [number, number, number][] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!points.length) return;
+
+    const heat = (L as any).heatLayer(points, {
+      radius: 80,
+      blur: 40,
+      maxZoom: 10,
+      max: 1.5,
+      gradient: {
+        0.0: '#22c55e',
+        0.4: '#eab308',
+        0.6: '#ea580c',
+        1.0: '#dc2626'
+      }
+    }).addTo(map);
+
+    return () => {
+      map.removeLayer(heat);
+    };
+  }, [map, points]);
+
+  return null;
+}
 
 export function Forecast() {
   const [regionSales, setRegionSales] = useState<Record<string, number>>({});
   const [maxSales, setMaxSales] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [heatmapPoints, setHeatmapPoints] = useState<[number, number, number][]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -21,9 +59,22 @@ export function Forecast() {
           return acc;
         }, {});
 
+        // Create heatmap points
+        const points: [number, number, number][] = [];
+        rawData.forEach((item: any) => {
+          const coords = regionCoordinates[item.region];
+          if (coords) {
+            const lat = coords[0] + (Math.random() - 0.5) * 3;
+            const lng = coords[1] + (Math.random() - 0.5) * 3;
+            const intensity = item.average_spend_inr / 1500;
+            points.push([lat, lng, intensity]);
+          }
+        });
+
         console.log('Region Sales:', salesByRegion);
         setRegionSales(salesByRegion);
         setMaxSales(Math.max(...Object.values(salesByRegion).map(v => Number(v))));
+        setHeatmapPoints(points);
         setLoading(false);
       } catch (error) {
         console.error('Error loading forecast data:', error);
@@ -38,98 +89,41 @@ export function Forecast() {
     return <div className="p-8 text-center">Loading Forecast...</div>;
   }
 
-  // Get color intensity based on sales
-  const getColorIntensity = (sales: number) => {
+  // Get color based on sales intensity - Green to Red
+  const getHeatmapColor = (sales: number) => {
     const intensity = (sales / maxSales) * 100;
-    if (intensity > 80) return "bg-red-600";
-    if (intensity > 60) return "bg-orange-500";
-    if (intensity > 40) return "bg-yellow-500";
-    if (intensity > 20) return "bg-green-500";
-    return "bg-blue-500";
+    if (intensity > 75) return "#dc2626";
+    if (intensity > 50) return "#ea580c";
+    if (intensity > 25) return "#eab308";
+    return "#22c55e";
   };
-
-  const regions = [
-    { name: "North", top: "25%", left: "50%" },
-    { name: "South", top: "75%", left: "50%" },
-    { name: "East", top: "50%", left: "65%" },
-    { name: "West", top: "50%", left: "35%" },
-  ];
 
   return (
     <div className="space-y-6">
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl tracking-tight mb-2">Sales Forecast & Regional Analysis</h1>
-        <p className="text-muted-foreground">Interactive heatmap showing sales intensity across regions</p>
+        <p className="text-muted-foreground">Interactive heatmap showing sales intensity across India</p>
       </div>
 
-      {/* India Heatmap */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-card rounded-xl p-8 border"
+        className="bg-card rounded-xl p-6 border"
       >
-        <div className="flex items-center gap-3 mb-6">
-          <MapPin className="w-6 h-6 text-primary" />
-          <h2 className="text-2xl font-semibold">India Sales Heatmap</h2>
-        </div>
-
-        {/* Map Container */}
-        <div className="relative w-full h-[600px] bg-gradient-to-b from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 rounded-xl border-2 border-border overflow-hidden">
-          {/* India Map Background */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-30">
-            <div className="text-9xl font-bold text-gray-400 dark:text-gray-600">INDIA</div>
-          </div>
-          
-          {/* Grid Lines for Reference */}
-          <div className="absolute inset-0">
-            <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                  <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#e5e7eb" strokeWidth="0.5" className="dark:stroke-gray-700" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-          </div>
-
-          {/* Regional Markers */}
-          {regions.map((region) => {
-            const sales = regionSales[region.name] || 0;
-            const colorClass = getColorIntensity(sales);
-            
-            return (
-              <motion.div
-                key={region.name}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="absolute"
-                style={{ top: region.top, left: region.left, transform: "translate(-50%, -50%)" }}
-              >
-                <div className="relative group cursor-pointer">
-                  {/* Pulsing Circle */}
-                  <div className={`w-24 h-24 rounded-full ${colorClass} opacity-60 animate-pulse`} />
-                  
-                  {/* Inner Circle */}
-                  <div className={`absolute inset-0 w-24 h-24 rounded-full ${colorClass} flex items-center justify-center`}>
-                    <div className="text-center text-white">
-                      <div className="text-xs font-semibold">{region.name}</div>
-                      <div className="text-lg font-bold">₹{(sales / 1000).toFixed(0)}K</div>
-                    </div>
-                  </div>
-
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="bg-black text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap">
-                      <div className="font-semibold">{region.name} Region</div>
-                      <div>Total Sales: ₹{sales.toLocaleString()}</div>
-                      <div>Intensity: {((sales / maxSales) * 100).toFixed(0)}%</div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
+        <h2 className="text-2xl font-semibold mb-4">India Sales Heatmap</h2>
+        <div className="h-[600px] rounded-lg overflow-hidden border-2 border-border">
+          <MapContainer
+            center={[20.5937, 78.9629]}
+            zoom={5}
+            style={{ height: "100%", width: "100%" }}
+            scrollWheelZoom={true}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <HeatmapLayer points={heatmapPoints} />
+          </MapContainer>
         </div>
 
         {/* Legend */}
@@ -137,24 +131,20 @@ export function Forecast() {
           <div className="text-sm text-muted-foreground">Sales Intensity:</div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-blue-500" />
-              <span className="text-xs">Low</span>
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#22c55e' }} />
+              <span className="text-xs">Low (0-25%)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-green-500" />
-              <span className="text-xs">Medium</span>
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#eab308' }} />
+              <span className="text-xs">Medium (25-50%)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-yellow-500" />
-              <span className="text-xs">High</span>
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ea580c' }} />
+              <span className="text-xs">High (50-75%)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-orange-500" />
-              <span className="text-xs">Very High</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-red-600" />
-              <span className="text-xs">Highest</span>
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#dc2626' }} />
+              <span className="text-xs">Highest (75-100%)</span>
             </div>
           </div>
         </div>
@@ -162,27 +152,29 @@ export function Forecast() {
 
       {/* Regional Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {regions.map((region) => {
-          const sales = regionSales[region.name] || 0;
+        {Object.entries(regionSales).map(([region, sales]) => {
           const intensity = ((sales / maxSales) * 100).toFixed(0);
           
           return (
             <motion.div
-              key={region.name}
+              key={region}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="bg-card rounded-xl p-6 border"
             >
               <div className="flex items-center gap-3 mb-3">
                 <TrendingUp className="w-5 h-5 text-primary" />
-                <h3 className="font-semibold">{region.name} Region</h3>
+                <h3 className="font-semibold">{region} Region</h3>
               </div>
               <div className="text-2xl font-bold mb-1">₹{(sales / 1000).toFixed(1)}K</div>
               <div className="text-sm text-muted-foreground">Sales Intensity: {intensity}%</div>
               <div className="mt-3 w-full bg-muted rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full ${getColorIntensity(sales)}`}
-                  style={{ width: `${intensity}%` }}
+                  className="h-2 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${intensity}%`,
+                    backgroundColor: getHeatmapColor(sales)
+                  }}
                 />
               </div>
             </motion.div>
