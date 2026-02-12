@@ -8,6 +8,7 @@ interface HeaderProps {
   isDark: boolean;
   onThemeToggle: () => void;
   onNavigate: (page: string) => void;
+  onSearchDetail: (data: any) => void;
 }
 
 interface SearchResult {
@@ -15,13 +16,15 @@ interface SearchResult {
   description: string;
   category: string;
   page: string;
+  data?: any;
 }
 
-export function DashboardHeader({ onMenuToggle, isDark, onThemeToggle, onNavigate }: HeaderProps) {
+export function DashboardHeader({ onMenuToggle, isDark, onThemeToggle, onNavigate, onSearchDetail }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -33,6 +36,12 @@ export function DashboardHeader({ onMenuToggle, isDark, onThemeToggle, onNavigat
       const avgSpend = Math.round(totalRevenue / totalConsumers);
       
       // Brand analytics
+      const brandRevenue = rawData.reduce((acc: any, item) => {
+        if (!acc[item.brand_preference]) acc[item.brand_preference] = 0;
+        acc[item.brand_preference] += item.average_spend_inr;
+        return acc;
+      }, {});
+      
       const brandCounts = rawData.reduce((acc: any, item) => {
         acc[item.brand_preference] = (acc[item.brand_preference] || 0) + 1;
         return acc;
@@ -70,9 +79,11 @@ export function DashboardHeader({ onMenuToggle, isDark, onThemeToggle, onNavigat
         totalRevenue,
         avgSpend,
         brands: brandCounts,
+        brandRevenue,
         regions: regionStats,
         ageGroups,
-        channels: channelStats
+        channels: channelStats,
+        rawData
       });
     };
     
@@ -94,12 +105,15 @@ export function DashboardHeader({ onMenuToggle, isDark, onThemeToggle, onNavigat
     // Search in brands
     Object.entries(analyticsData.brands).forEach(([brand, count]: [string, any]) => {
       if (brand.toLowerCase().includes(q)) {
-        const revenue = Math.round((count / analyticsData.totalConsumers) * analyticsData.totalRevenue);
+        const brandRevenue = analyticsData.rawData
+          .filter((d: any) => d.brand_preference === brand)
+          .reduce((sum: number, d: any) => sum + d.average_spend_inr, 0);
         results.push({
           title: brand,
-          description: `${count} consumers (${((count / analyticsData.totalConsumers) * 100).toFixed(1)}%) • Revenue: ₹${(revenue / 1000).toFixed(1)}K`,
+          description: `${count} consumers (${((count / analyticsData.totalConsumers) * 100).toFixed(1)}%) • Revenue: ₹${(brandRevenue / 1000).toFixed(1)}K`,
           category: "Brand",
-          page: "dashboard"
+          page: "dashboard",
+          data: { brand, count, revenue: brandRevenue, percentage: ((count / analyticsData.totalConsumers) * 100).toFixed(1) }
         });
       }
     });
@@ -111,7 +125,8 @@ export function DashboardHeader({ onMenuToggle, isDark, onThemeToggle, onNavigat
           title: `${region} Region`,
           description: `${stats.count} consumers • Revenue: ₹${(stats.revenue / 1000).toFixed(1)}K • Avg: ₹${Math.round(stats.revenue / stats.count)}`,
           category: "Region",
-          page: "forecast"
+          page: "forecast",
+          data: { region, count: stats.count, revenue: stats.revenue, avgSpend: Math.round(stats.revenue / stats.count) }
         });
       }
     });
@@ -160,7 +175,7 @@ export function DashboardHeader({ onMenuToggle, isDark, onThemeToggle, onNavigat
     }
     
     setSearchResults(results);
-    setShowResults(true);
+    setShowResults(results.length > 0);
   };
 
   return (
@@ -194,24 +209,29 @@ export function DashboardHeader({ onMenuToggle, isDark, onThemeToggle, onNavigat
             />
             {/* Search Results Dropdown */}
             {showResults && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg max-h-96 overflow-y-auto z-50">
-                {searchResults.map((result, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      onNavigate(result.page);
-                      setShowResults(false);
-                      setSearchQuery("");
-                    }}
-                    className="w-full px-4 py-3 hover:bg-muted transition-colors border-b border-border/50 last:border-0 text-left cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-sm">{result.title}</span>
-                      <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">{result.category}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{result.description}</p>
-                  </button>
-                ))}
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-2xl max-h-[500px] overflow-y-auto z-50">
+                <div className="p-3 border-b border-border bg-muted/30">
+                  <p className="text-xs font-medium text-muted-foreground">{searchResults.length} results found</p>
+                </div>
+                <div className="max-h-[450px] overflow-y-auto">
+                  {searchResults.map((result, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        onSearchDetail(result);
+                        setShowResults(false);
+                        setSearchQuery("");
+                      }}
+                      className="w-full px-4 py-4 hover:bg-muted transition-colors border-b border-border/50 last:border-0 text-left cursor-pointer group"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-base group-hover:text-primary transition-colors">{result.title}</span>
+                        <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-medium">{result.category}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{result.description}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {showResults && searchQuery && searchResults.length === 0 && (
@@ -238,6 +258,63 @@ export function DashboardHeader({ onMenuToggle, isDark, onThemeToggle, onNavigat
           </button>
         </div>
       </div>
+
+      {/* Detail Modal */}
+      {selectedResult && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedResult(null)}>
+          <div className="bg-card rounded-2xl border border-border shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-card border-b border-border p-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold mb-1">{selectedResult.title}</h2>
+                <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-medium">{selectedResult.category}</span>
+              </div>
+              <button onClick={() => setSelectedResult(null)} className="p-2 hover:bg-muted rounded-lg transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-2">Overview</h3>
+                <p className="text-lg leading-relaxed">{selectedResult.description}</p>
+              </div>
+              
+              {selectedResult.data && (
+                <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground">Detailed Information</h3>
+                  {Object.entries(selectedResult.data).map(([key, value]) => (
+                    <div key={key} className="flex justify-between items-center">
+                      <span className="text-sm capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                      <span className="font-semibold">{typeof value === 'number' && value > 1000 ? `₹${(value as number).toLocaleString()}` : String(value)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    onSearchDetail(selectedResult);
+                    setSelectedResult(null);
+                    setSearchQuery("");
+                  }}
+                  className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                >
+                  View Detailed Analytics
+                </button>
+                <button
+                  onClick={() => setSelectedResult(null)}
+                  className="px-6 py-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.header>
   );
 }

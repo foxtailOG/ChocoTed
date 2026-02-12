@@ -13,6 +13,9 @@ import { RegionalSpending } from "./components/RegionalSpending";
 import { SalesHeatmap } from "./components/SalesHeatmap";
 import { Trends } from "./components/Trends";
 import { Forecast } from "./components/Forecast";
+import { Reports } from "./components/Reports";
+import { Settings } from "./components/Settings";
+import { DetailView } from "./components/DetailView";
 import ChocolateTable from "./components/ChocolateTable";
 import { ChocolateDataService, ChocolateConsumerData } from "../data/chocolateData";
 
@@ -20,6 +23,7 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [currentPage, setCurrentPage] = useState("dashboard");
+  const [searchDetailData, setSearchDetailData] = useState<any>(null);
 
   const [customerData, setCustomerData] = useState<ChocolateConsumerData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +59,10 @@ export default function App() {
   }
 
   const renderPage = () => {
+    if (searchDetailData) {
+      return <DetailView searchData={searchDetailData} onBack={() => setSearchDetailData(null)} />;
+    }
+    
     switch (currentPage) {
       case "consumer-insights":
         return <ConsumerInsights />;
@@ -65,23 +73,9 @@ export default function App() {
       case "forecast":
         return <Forecast />;
       case "reports":
-        return (
-          <div className="flex items-center justify-center h-[60vh]">
-            <div className="text-center">
-              <h1 className="text-3xl font-semibold mb-2">Reports</h1>
-              <p className="text-muted-foreground">Coming soon...</p>
-            </div>
-          </div>
-        );
+        return <Reports />;
       case "settings":
-        return (
-          <div className="flex items-center justify-center h-[60vh]">
-            <div className="text-center">
-              <h1 className="text-3xl font-semibold mb-2">Settings</h1>
-              <p className="text-muted-foreground">Coming soon...</p>
-            </div>
-          </div>
-        );
+        return <Settings />;
       default:
         return (
           <>
@@ -114,13 +108,6 @@ export default function App() {
               <FlavorChart />
               <BrandChart />
             </div>
-
-            <div className="mt-10">
-              <h2 className="text-2xl font-semibold mb-4">
-                Customer Data Table
-              </h2>
-              <ChocolateTable data={customerData} />
-            </div>
           </>
         );
     }
@@ -140,6 +127,7 @@ export default function App() {
           isDark={isDark}
           onThemeToggle={() => setIsDark(!isDark)}
           onNavigate={setCurrentPage}
+          onSearchDetail={setSearchDetailData}
         />
 
         <main className="p-6 max-w-[1800px] mx-auto">
